@@ -1,0 +1,39 @@
+
+var i = 0.0f;
+var rgb = setInterval(fun[i]() {
+    ++i;
+    if (i > 360) { i = 0 }
+    var color = HSVtoRGB(i/360.0f, 1.0f, 1.0f);
+    if (gsc.getDvar("sv_rgb") == "1") {
+        gsc.SetSunLight( color[0], color[1], color[2] );
+    } else {
+        gsc.resetSunLight();
+    }
+}, 100)
+level.onNotify("block_notifies", fun[rgb](arguments) {
+    rgb.clear();
+})
+def HSVtoRGB(h, s, v) {
+    var r = 0.0f;
+    var g = 0.0f;
+    var b = 0.0f;
+    var i = 0;
+    var f = 0.0f;
+    var p = 0.0f;
+    var q = 0.0f;
+    var t = 0.0f;
+    i = gsc.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case (0) { r = v; g = t; b = p; break;}
+        case (1) { r = q; g = v; b = p; break;}
+        case (2) { r = p; g = v; b = t; break;}
+        case (3) { r = p; g = q; b = v; break;}
+        case (4) { r = t; g = p; b = v; break;}
+        case (5) { r = v; g = p; b = q; break;}
+    }
+    return [r * 2, g * 2, b * 2];
+}
