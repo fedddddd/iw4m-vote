@@ -14,3 +14,5 @@ All commands start with a '$':
 * help: show command list
 * maps: shows map list
 * stop: stops current vote (moderator only)
+* rgb: vote to start rgb effect (requires server side scripts for it)
+* gravity: vote to set gravity to specified value
