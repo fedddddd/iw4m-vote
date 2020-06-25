@@ -16,3 +16,6 @@ All commands start with a '$':
 * stop: stops current vote (moderator only)
 * rgb: vote to start rgb effect (requires server side scripts for it)
 * gravity: vote to set gravity to specified value
+
+Effects:
+* rgb.chai: script for Plutonium IW5, changes sunlight color every 100ms
