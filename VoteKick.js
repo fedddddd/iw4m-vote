@@ -595,7 +595,7 @@ let plugin = {
                                 case (this.getPlayers() < this.configuration.vote.minimumPlayers):
                                     gameEvent.Origin.Tell(`There must be atleast ^5${this.configuration.vote.minimumPlayers}^7 players to start a vote!`);
                                     return;
-                                case (target.ClientPermission.Level >= this.localization.immunityLevel):
+                                case (target.ClientPermission.Level >= this.immunityLevel):
                                     gameEvent.Origin.Tell(`Sorry, you cant kick ^5${target.Name}`);
                                     return;
                             }
