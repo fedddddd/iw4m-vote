@@ -34,6 +34,30 @@ let plugin = {
                     value: '800',
                     command: 'g_gravity 800'
                 }
+            },
+            jetpack: {
+                type: 'jetpack',
+                effectStart: 'seta gg_jetpack 1',
+                end: {
+                    value: 'OFF',
+                    command: 'seta gg_jetpack 0'
+                }
+            },
+            explosives: {
+                type: 'explosives',
+                effectStart: 'seta sv_explosives 1',
+                end: {
+                    value: 'OFF',
+                    command: 'seta sv_explosives 0'
+                }
+            },
+            jumpHeight: {
+                type: 'jumpHeight',
+                effectStart: 'jump_height %value%',
+                end: {
+                    value: '39',
+                    command: 'jump_height 39'
+                }
             }
         },
         commands: {
@@ -114,6 +138,30 @@ let plugin = {
                 description: 'Vote set ^5gravity^7 to specified value, Usage: $gravity <value>',
                 type: 'gravity',
                 alias: null,
+                enabled: true,
+                level: 0
+            },
+            explosives: {
+                command: 'explosives',
+                description: 'Vote to enable ^1explosives only^7, Usage $explosives',
+                type: 'explosives',
+                alias: null,
+                enabled: true,
+                level: 0
+            },
+            jetpack: {
+                command: 'jetpack',
+                description: 'Vote to enable ^1jetpacks^7, Usage: $jetpack',
+                type: 'jetpack',
+                alias: null,
+                enabled: true,
+                level: 0
+            },
+            jumpHeight: {
+                command: 'jumpHeight',
+                description: 'Vote to set ^5jump height^7 to specified value, Usage $jumpheight <value>',
+                type: 'jumpHeight',
+                alias: 'jh',
                 enabled: true,
                 level: 0
             }
@@ -241,6 +289,18 @@ let plugin = {
         'gravity': {
             description: 'set ^5gravity^7 to [^5%name%^7]',
             message: '^5gravity^7 set to [^5%value%^7]'
+        },
+        'explosives': {
+            description: 'set game to ^1explosives only^7',
+            message: '^1explosives only^7 [^5%value%^7]'
+        },
+        'jetpack': {
+            description: 'enable ^2jetpacks^7',
+            message: '^2jetpacks^7 [^5%value%^7]'
+        },
+        'jumpHeight': {
+            description: 'set ^5jump_height^7 to [^5%name%^7]',
+            message: '^5jump_height^7 set to [^5%value%^7]'
         }
     },
     getPlayers: function() {
@@ -308,10 +368,25 @@ let plugin = {
                         This command sets sv_rgb to 1 then you must have a server side script to do the rgb effect, for example in gsc using setSunLight(r, g, b)
                     */
                     break;
+                case this.configuration.commands.jetpack.type:
+                    server.RconParser.ExecuteCommandAsync(server.RemoteConnection, "seta gg_jetpack 1");
+                    server.Broadcast(this.localization['jetpack'].message.replace('%value%', 'ON'))
+                    this.currentEffects.push({type: this.configuration.effects.jetpack.type, start: new Date()})
+                    break;
+                case this.configuration.commands.explosives.type:
+                    server.RconParser.ExecuteCommandAsync(server.RemoteConnection, "seta sv_explosives 1");
+                    server.Broadcast(this.localization['explosives'].message.replace('%value%', 'ON'))
+                    this.currentEffects.push({type: this.configuration.effects.explosives.type, start: new Date()})
+                    break;
                 case this.configuration.commands.gravity.type:
                     server.RconParser.ExecuteCommandAsync(server.RemoteConnection, `g_gravity ${this.currentvote.data.target.Name}`);
                     server.Broadcast(this.localization['gravity'].message.replace('%value%', this.currentvote.data.target.Name))
                     this.currentEffects.push({type: this.configuration.effects.gravity.type, start: new Date()})
+                    break;
+                case this.configuration.commands.jumpHeight.type:
+                    server.RconParser.ExecuteCommandAsync(server.RemoteConnection, `jump_height ${this.currentvote.data.target.Name}`);
+                    server.Broadcast(this.localization['jumpHeight'].message.replace('%value%', this.currentvote.data.target.Name))
+                    this.currentEffects.push({type: this.configuration.effects.jumpHeight.type, start: new Date()})
                     break;
             }
             this.resetVote();
@@ -330,13 +405,17 @@ let plugin = {
         for (var i = 0; i < server.Maps.toArray().length; i++) {
             Maps.push(server.Maps.toArray()[i]);
         }
-        for (var i = 0; i < this.configuration.maps[server.GameName.toString()].extra.length; i++) {
-            Maps.push(this.configuration.maps[server.GameName.toString()].extra[i]);
+        if (this.configuration.maps[server.GameName.toString()].extra) {
+            for (var i = 0; i < this.configuration.maps[server.GameName.toString()].extra.length; i++) {
+                Maps.push(this.configuration.maps[server.GameName.toString()].extra[i]);
+            }
         }
-        for (var i = 0; i < this.configuration.maps[server.GameName.toString()].exclusions.length; i++) {
-            for (var o = 0; o < Maps.length; o++) {
-                if (Maps[o].Name.toLocaleLowerCase() == this.configuration.maps[server.GameName.toString()].exclusions[i].Name.toLocaleLowerCase() || Maps[o].Alias.toLocaleLowerCase() == this.configuration.maps[server.GameName.toString()].exclusions[i].Alias.toLocaleLowerCase()) {
-                    Maps.splice(o, 1);
+        if (this.configuration.maps[server.GameName.toString()].exclusions) {
+            for (var i = 0; i < this.configuration.maps[server.GameName.toString()].exclusions.length; i++) {
+                for (var o = 0; o < Maps.length; o++) {
+                    if (Maps[o].Name.toLocaleLowerCase() == this.configuration.maps[server.GameName.toString()].exclusions[i].Name.toLocaleLowerCase() || Maps[o].Alias.toLocaleLowerCase() == this.configuration.maps[server.GameName.toString()].exclusions[i].Alias.toLocaleLowerCase()) {
+                        Maps.splice(o, 1);
+                    }
                 }
             }
         }
@@ -412,8 +491,7 @@ let plugin = {
             this.resetVote();
         }
         for (var i = 0; i < this.currentEffects.length; i++) {
-            if ((new Date() - this.currentEffects[i].start) / 1000 >= this.configuration.vote.duration) {
-                this.Log('effect end')
+            if ((new Date() - this.currentEffects[i].start) / 1000 >= this.configuration.vote.duration * 2) {
                 server.RconParser.ExecuteCommandAsync(server.RemoteConnection, this.configuration.effects[this.currentEffects[i].type].end.command);
                 server.Broadcast(this.localization[this.currentEffects[i].type].message.replace('%value%', this.configuration.effects[this.currentEffects[i].type].end.value));
                 this.currentEffects.splice(i, 1)
@@ -508,6 +586,8 @@ let plugin = {
                             });
                             break;
                         case this.configuration.commands.rgb.type:
+                        case this.configuration.commands.jetpack.type:
+                        case this.configuration.commands.explosives.type:
                             switch (true) {
                                 case (this.currentvote.type != null && this.currentvote.type != commandData.type):
                                     gameEvent.Origin.Tell(`Another vote is already in progress to ${this.localization[this.currentvote.type].description.replace("%name%", this.currentvote.data.target.Name)}`);
@@ -524,6 +604,7 @@ let plugin = {
                                 }
                             });
                             break;
+                        case this.configuration.commands.jumpHeight.type:
                         case this.configuration.commands.gravity.type:
                             var value = parseInt(message.substr(message.indexOf(' ') + 1));
                             switch (true) {
